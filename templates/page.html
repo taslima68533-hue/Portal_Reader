@@ -1,0 +1,343 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OTP Inbox</title>
+<style>
+:root{
+  --bg:#f4f7fb;--surface:#ffffff;--surface2:#f8fafc;--text:#172033;--muted:#6b7485;
+  --line:#e7ebf2;--primary:#4f46e5;--primary2:#7c3aed;--success:#059669;--danger:#dc2626;
+  --shadow:0 18px 55px rgba(31,41,55,.10);--radius:22px
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:radial-gradient(circle at 10% 0%,#eef2ff 0,transparent 34%),radial-gradient(circle at 100% 10%,#f3e8ff 0,transparent 32%),var(--bg)}
+body{padding-bottom:40px}
+button,input{font:inherit}
+button{border:0;cursor:pointer}
+.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.82);backdrop-filter:blur(18px);border-bottom:1px solid rgba(231,235,242,.85)}
+.top-inner{max-width:1040px;margin:auto;padding:15px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.brand-wrap{display:flex;align-items:center;gap:11px;min-width:0}
+.logo{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;color:#fff;font-size:21px;background:linear-gradient(135deg,var(--primary),var(--primary2));box-shadow:0 9px 22px rgba(79,70,229,.28)}
+.brand{font-size:17px;font-weight:850;letter-spacing:-.3px}.subbrand{font-size:11px;color:var(--muted);margin-top:1px}
+.timer-box{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);background:#fff;border-radius:14px}
+.timer-dot{width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 0 4px rgba(5,150,105,.10)}
+.timer{font-variant-numeric:tabular-nums;font-size:19px;font-weight:850;letter-spacing:.5px;color:var(--text)}
+.wrap{max-width:1040px;margin:0 auto;padding:22px 18px 48px}
+.hero{padding:6px 2px 18px}.eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:var(--primary);background:#eef2ff;border:1px solid #e0e7ff;padding:7px 10px;border-radius:999px}.hero h1{font-size:30px;line-height:1.12;margin:13px 0 7px;letter-spacing:-1px}.hero p{margin:0;color:var(--muted);font-size:14px}
+.note{display:flex;gap:12px;align-items:flex-start;background:linear-gradient(135deg,#fff7ed,#fff1f2);border:1px solid #fed7aa;color:#9a3412;padding:14px 16px;border-radius:17px;line-height:1.5;font-size:13px;font-weight:650;box-shadow:0 8px 28px rgba(154,52,18,.05)}
+.note-icon{width:30px;height:30px;flex:0 0 30px;display:grid;place-items:center;background:#fff;border-radius:10px}
+.grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:16px;margin-top:16px}
+.card,.pane{background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card{padding:20px}.account{display:flex;align-items:center;gap:14px}.mail-icon{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:#eef2ff;color:var(--primary);font-size:22px;flex:0 0 48px}.mail-icon{overflow:hidden}.mail-icon img{width:100%;height:100%;object-fit:contain}.label{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:800}.addr{font-size:19px;font-weight:850;letter-spacing:-.35px;word-break:break-all;cursor:pointer}.hint{font-size:11px;color:var(--muted);margin-top:3px}
+.actions{display:flex;gap:9px;margin-top:16px}.btn{padding:11px 14px;border-radius:13px;font-size:13px;font-weight:800;transition:.15s transform,.15s box-shadow}.btn:active{transform:translateY(1px)}.btn-primary{color:#fff;background:linear-gradient(135deg,var(--primary),var(--primary2));box-shadow:0 9px 20px rgba(79,70,229,.22)}.btn-secondary{color:#344054;background:#f8fafc;border:1px solid var(--line)}
+.btn-reactivate{color:#fff;background:linear-gradient(135deg,var(--success),#047857);box-shadow:0 9px 20px rgba(5,150,105,.20);padding:9px 12px;border-radius:11px;font-size:12px;font-weight:850;white-space:nowrap}.timer-box.status-done{background:#ecfdf5;border-color:#bbf7d0}.timer-box.status-expired{background:#fff7ed;border-color:#fed7aa}.timer-box.status-expired .timer-dot{background:var(--danger);box-shadow:0 0 0 4px rgba(220,38,38,.10)}.timer-status{font-size:12px;font-weight:850;white-space:nowrap}.timer-status.done{color:var(--success)}.timer-status.expired{color:#c2410c}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}.pill{padding:7px 10px;border-radius:10px;background:var(--surface2);border:1px solid var(--line);font-size:11px;color:#596273;font-weight:700}.pill b{color:var(--text)}
+.progress{margin-top:16px;height:8px;border-radius:99px;background:#edf0f5;overflow:hidden}.progress-bar{height:100%;width:100%;border-radius:inherit;background:linear-gradient(90deg,var(--primary),var(--primary2));transition:width .5s linear}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.section-title{font-size:14px;font-weight:850}.live{display:inline-flex;align-items:center;gap:6px;color:var(--success);font-size:11px;font-weight:800}.live i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.list{display:flex;flex-direction:column;max-height:360px;overflow:auto;padding:0}.list:empty:before{content:"Waiting for a new OTP…";display:block;padding:30px 10px;text-align:center;color:var(--muted);font-size:13px}
+.mail-card{padding:13px;border:1px solid var(--line);border-radius:15px;background:#fff;cursor:pointer;transition:.15s border-color,.15s box-shadow,.15s transform}.mail-card:hover{border-color:#c7d2fe;box-shadow:0 8px 22px rgba(79,70,229,.08);transform:translateY(-1px)}.mail-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.service{font-size:12px;font-weight:850}.new-badge{font-size:9px;font-weight:900;color:var(--success);background:#ecfdf5;padding:4px 7px;border-radius:999px}.mail-email{font-size:12px;color:var(--muted);margin-top:5px;word-break:break-all}.subject{font-size:12px;font-weight:650;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.otp-mini{display:inline-flex;margin-top:9px;padding:7px 9px;border-radius:9px;background:#ecfdf5;color:#047857;font-size:13px;font-weight:900;letter-spacing:1px}
+.pane{margin-top:16px;min-height:420px;overflow:hidden}.pane-head{padding:13px 16px;border-bottom:1px solid var(--line);font-size:12px;font-weight:850;background:#fbfcfe}.pane-body{min-height:365px}iframe{width:100%;height:365px;border:0;display:block;background:#fff}
+.empty-pane{min-height:365px;display:grid;place-items:center;text-align:center;padding:30px;color:var(--muted)}.empty-icon{font-size:34px;margin-bottom:9px}.empty-pane b{display:block;color:var(--text);font-size:14px;margin-bottom:4px}
+.inbox-empty{padding:44px 18px;text-align:center;color:var(--muted);font-size:13px}.inbox-empty b{display:block;color:var(--text);font-size:14px;margin:5px 0}.inbox-empty span{display:block}
+.mail-card{display:flex;align-items:center;gap:12px;padding:14px 15px;border:1px solid transparent;border-bottom-color:var(--line);border-radius:0;background:#fff;cursor:pointer;transition:.15s background,.15s box-shadow,.15s border-color}.mail-card:hover{background:#f7f9fc}.mail-card.selected{background:#eef2ff;border-color:#c7d2fe;box-shadow:inset 3px 0 0 var(--primary)}.avatar{width:40px;height:40px;flex:0 0 40px;border-radius:50%;display:grid;place-items:center;background:#e8eefc;color:#4355a5;font-weight:850;overflow:hidden}.service-logo{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}.mail-main{min-width:0;flex:1}.mail-line{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}.sender{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mail-time{font-size:11px;color:var(--muted);white-space:nowrap}.mail-snippet{font-size:11px;color:var(--muted);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.subject{font-size:12px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.otp-mini{margin:0 0 0 8px;padding:4px 7px;border-radius:8px;background:#ecfdf5;color:#047857;font-size:11px;font-weight:900;letter-spacing:.6px;white-space:nowrap}.preview-meta{padding:18px 18px 14px;border-bottom:1px solid var(--line);background:#fff}.preview-subject{font-size:17px;font-weight:850;line-height:1.35}.preview-from{margin-top:7px;color:#596273;font-size:12px}.preview-from span{color:#8a93a3}.otp-preview{display:inline-block;margin-top:10px;padding:7px 10px;border-radius:9px;background:#ecfdf5;color:#047857;font-size:12px}.pane-body{background:#fff}
+.form-card{max-width:560px;margin:55px auto}.form-card h1{margin:0 0 6px;font-size:25px}.form-card p{color:var(--muted);font-size:13px}.form-row{margin-top:18px}input{width:100%;padding:14px 15px;border-radius:14px;border:1px solid var(--line);outline:none;background:#fbfcfe;color:var(--text);font-size:16px;font-weight:700;letter-spacing:1px}input:focus{border-color:#a5b4fc;box-shadow:0 0 0 4px #eef2ff}.full{width:100%;margin-top:10px}
+.status-card{text-align:center;padding:40px 22px}.status-icon{width:62px;height:62px;border-radius:20px;display:grid;place-items:center;margin:0 auto 14px;font-size:28px;background:#eef2ff;color:var(--primary)}.status-card h1{margin:0;font-size:24px}.status-card p{color:var(--muted);font-size:13px}.warn{color:var(--danger)!important}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.hero h1{font-size:26px}.wrap{padding-top:17px}.top-inner{padding:12px 14px;flex-wrap:wrap}.timer{font-size:17px}.timer-box{padding:7px 9px}.card{padding:17px}.pane{min-height:380px}iframe,.empty-pane{height:325px;min-height:325px}}
+.btn-new-mail{background:linear-gradient(135deg,#059669,#0d9488);color:#fff;border:1px solid #047857;box-shadow:0 5px 14px rgba(5,150,105,.25);font-weight:800}.btn-new-mail:hover{background:linear-gradient(135deg,#047857,#0f766e);color:#fff}.btn-new-mail:focus-visible{outline:3px solid #6ee7b7;outline-offset:3px}
+</style>
+<style>
+.reason-dialog{border:1px solid var(--line);border-radius:20px;padding:24px;width:min(440px,calc(100vw - 32px));box-sizing:border-box;color:var(--text);box-shadow:0 24px 80px rgba(15,23,42,.25)}
+.reason-dialog::backdrop{background:rgba(15,23,42,.5)}
+.reason-dialog h2{margin:0 0 12px;font-size:22px}.reason-dialog p{line-height:1.6}.reason-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.reason-options .btn{justify-content:center}.reason-wide{grid-column:1/-1}.reason-back{background:#f1f5f9;color:#334155}
+</style>
+</head>
+<body>
+<div class="top"><div class="top-inner"><div class="brand-wrap"><div class="logo">✉</div><div><div class="brand">OTP Inbox</div><div class="subbrand">Secure temporary mail reader</div></div></div>{% if poll %}<div class="timer-box{% if expired %} status-expired{% endif %}" id="timer-box"><span class="timer-dot"></span>{% if expired and can_reactivate %}<button type="button" id="reactivateBtn" class="btn btn-reactivate" onclick="reactivateCode()">Reactivate</button>{% elif expired %}<div class="timer-status expired">Session ended</div>{% else %}<div class="timer" id="left">00s</div>{% if can_reactivate %}<button type="button" id="reactivateBtn" class="btn btn-reactivate" onclick="reactivateCode()">Reactivate</button>{% endif %}{% endif %}</div>{% endif %}</div></div>
+<div class="wrap">{{ body | safe }}</div>
+{% if poll %}
+<dialog id="reactivate-reason" class="reason-dialog" aria-labelledby="reason-title">
+  <h2 id="reason-title">Reactivate — pick a reason</h2>
+  <p>Why do you want to cancel this mail?</p>
+  <p class="muted"><b>No Need</b> — I don't need this anymore<br><b>Used Mail</b> — Mail was already used<br><b>No OTP</b> — OTP not received on this mail</p>
+  <p class="muted">This will end the current session and give you a <b>new email address</b> for the same service. No new charge.</p>
+  <div class="reason-options">
+    <button type="button" class="btn btn-primary" onclick="chooseReactivateReason('noneed')">No Need</button>
+    <button type="button" class="btn btn-primary" onclick="chooseReactivateReason('used')">Used Mail</button>
+    <button type="button" class="btn btn-primary reason-wide" onclick="chooseReactivateReason('nototp')">No OTP</button>
+    <button type="button" class="btn reason-back reason-wide" onclick="document.getElementById('reactivate-reason').close()">Back</button>
+  </div>
+</dialog>
+<script>
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+let selectedMailUid = null;
+let inboxInitialized = false;
+let lastMails = [];
+
+function serviceLogo(m){
+  const sender=String((m && (m.sender||m.from))||'');
+  const mailbox=document.querySelector('.mail-icon[data-service]');
+  const name=/hridoy\\s*bot\\s*hub/i.test(sender)
+    ? 'Hridoy Bot Hub' : String((m && m.service)||(mailbox && mailbox.dataset.service)||sender).trim();
+  return name ? '/OTP/logo/'+encodeURIComponent(name) : '';
+}
+function mailUid(m){return String((m && m.id) || '');}
+function formatSender(m){
+  const raw=String((m && (m.sender||m.from)) || 'Unknown').trim();
+  return raw.replace(/<[^>]*>/g,'').replace(/^"|"$/g,'') || 'Unknown';
+}
+function markSelected(){
+  document.querySelectorAll('#mails .mail-card').forEach(function(el){
+    el.classList.toggle('selected', el.dataset.uid===String(selectedMailUid||''));
+  });
+}
+function renderMail(m){
+  const pane=document.getElementById('pane-body');
+  if(!pane) return;
+  selectedMailUid=mailUid(m);
+  markSelected();
+  pane.innerHTML='';
+  const head=document.createElement('div');
+  head.className='preview-meta';
+  head.innerHTML='<div class="preview-subject">'+esc((m&&m.subject)||'(no subject)')+'</div>'
+    +'<div class="preview-from">'+esc(formatSender(m))+' <span>to '+esc((m&&m.email)||'')+'</span></div>'
+    +(m&&m.otp?'<div class="otp-preview">🔑 OTP <b>'+esc(m.otp)+'</b></div>':'');
+  pane.appendChild(head);
+  if(m && m.body_url){
+    const f=document.createElement('iframe');f.setAttribute('title','Email preview');
+    f.setAttribute('sandbox','allow-popups allow-popups-to-escape-sandbox');
+    f.referrerPolicy='no-referrer';f.src=m.body_url;pane.appendChild(f);
+  }
+  else {
+    const e=document.createElement('div');e.className='empty-pane';
+    e.innerHTML='<div><div class="empty-icon">✉️</div><b>Email preview unavailable</b><span>No message body was saved for this email.</span></div>';
+    pane.appendChild(e);
+  }
+}
+function renderMails(mails){
+  const box=document.getElementById('mails');if(!box)return;
+  lastMails=Array.isArray(mails)?mails.slice():[];
+  box.innerHTML='';
+  if(!lastMails.length){
+    if(!inboxInitialized){selectedMailUid=null;}
+    box.innerHTML='<div class="inbox-empty"><div class="empty-icon">📨</div><b>Waiting for new mail</b><span>New messages will appear here automatically.</span></div>';
+    inboxInitialized=true;
+    return;
+  }
+
+  const ordered=lastMails.slice().reverse();
+  ordered.forEach(function(m,displayIndex){
+    const uid=mailUid(m);
+    const el=document.createElement('div');
+    el.className='mail-card';
+    el.dataset.uid=uid;
+    const sender=formatSender(m);
+    const logo=serviceLogo(m);
+    const avatarFallback=esc((sender[0]||'M').toUpperCase());
+    const avatarHtml=logo
+      ? '<div class="avatar"><img class="service-logo" src="'+esc(logo)+'" alt="" loading="lazy" onerror="this.style.display=\'none\';this.parentElement.textContent=\''+avatarFallback+'\';"></div>'
+      : '<div class="avatar">'+avatarFallback+'</div>';
+    el.innerHTML=avatarHtml
+      +'<div class="mail-main"><div class="mail-line"><span class="sender">'+esc(sender)+'</span>'
+      +'<span class="mail-time">'+esc(m.time||'')+'</span></div>'
+      +'<div class="mail-line"><span class="subject">'+esc((m&&m.subject)||'(no subject)')+'</span>'
+      +(m&&m.otp?'<span class="otp-mini">'+esc(m.otp)+'</span>':'')+'</div>'
+      +'<div class="mail-snippet">'+(m&&m.previous_session?'Previous session · Code '+esc(m.source_code||'')+' · ':'')+esc((m&&m.service)||'OTP Mail')+' · '+esc((m&&m.email)||'')+'</div></div>';
+    el.onclick=function(){renderMail(m);};
+    box.appendChild(el);
+  });
+
+  const selectedStillExists=selectedMailUid && ordered.some(function(m){return mailUid(m)===String(selectedMailUid);});
+  if(!inboxInitialized || !selectedStillExists){
+    // Initial page load: show newest. Later, only fall back if the selected mail was removed.
+    renderMail(ordered[0]);
+  } else {
+    // New mail may have arrived, but never replace the user's current full view.
+    markSelected();
+  }
+  inboxInitialized=true;
+}
+function renderSessionHistory(sessions){
+  const box=document.getElementById('session-history');if(!box)return;
+  const rows=Array.isArray(sessions)?sessions:[];
+  if(rows.length<2){box.style.display='none';box.innerHTML='';return;}
+  box.style.display='block';
+  const items=rows.map(function(s){
+    const code=esc(s.code||'');
+    const when=s.created_at?new Date(Number(s.created_at)*1000).toLocaleString():'Date unavailable';
+    const method=s.payment_type==='paid'
+      ? 'Paid · '+Number(s.amount||0).toFixed(2)+' BDT'
+      : (s.payment_type==='redeemed'?'Redeemed with Portal Code':'Original session');
+    const label=s.current?'This page':'Open inbox';
+    const codeHtml=s.current?'<b>'+code+'</b>':'<a href="/OTP/'+encodeURIComponent(s.code||'')+'"><b>'+code+'</b></a>';
+    const source=s.source_code?' · From '+esc(s.source_code):'';
+    return '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-top:1px solid #e8eaf3">'
+      +'<div>'+codeHtml+'<div class="muted" style="font-size:12px;margin-top:3px">'+esc(when)+source+'</div></div>'
+      +'<div style="text-align:right;font-size:12px"><b>'+esc(method)+'</b><div class="muted" style="margin-top:3px">'+label+'</div></div></div>';
+  }).join('');
+  box.innerHTML='<div class="section-title">🔄 Buy Again &amp; session history</div>'
+    +'<div class="muted" style="font-size:12px;margin-top:5px">Linked sessions for this same email</div>'+items;
+}
+let _reactivateLease={{ reactivate_lease|tojson }};
+let _reactivateTimeUp={{ reactivate_time_up|tojson }};
+let _reactivating=false;
+let _reasonLease=null;
+const _pageLease=JSON.stringify(_reactivateLease);
+const _initialRemaining={{ countdown_initial_sec|tojson }};
+let _countdownDeadline=performance.now()+_initialRemaining*1000;
+let _timerState={status:{{ ('expired' if expired else 'active')|tojson }},remaining_sec:_initialRemaining,time_up:_reactivateTimeUp,can_reactivate:{{ can_reactivate|tojson }},mails:[]};
+async function portalJson(url,options={},timeoutMs=12000){
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),timeoutMs);
+  try{const response=await fetch(url,{...options,signal:controller.signal});return {response,data:await response.json()};}
+  finally{clearTimeout(timeout);}
+}
+async function reactivateCode(){
+  if(_reactivating)return;
+  if(!_reactivateTimeUp){_reasonLease=_reactivateLease.slice();document.getElementById('reactivate-reason').showModal();return;}
+  const originalLink=document.getElementById('original-reuse-link');
+  const notice='Reactivate will give you a NEW email address. '+(originalLink?'To keep the previous address, cancel and redeem this code on the original code’s Buy Again page. ':'')+'Your current session will end immediately. No new charge. Continue with a new email?';
+  if(!confirm(notice))return;
+  return sendReactivate('');
+}
+function chooseReactivateReason(reason){
+  document.getElementById('reactivate-reason').close();
+  const lease=_reasonLease||_reactivateLease;
+  _reasonLease=null;
+  return sendReactivate(reason,lease);
+}
+async function sendReactivate(reason,lease=_reactivateLease){
+  if(_reactivating)return;
+  const box=document.getElementById('timer-box');
+  if(!box) return;
+  _reactivating=true;
+  const btn=document.getElementById('reactivateBtn');
+  if(btn){btn.disabled=true;btn.textContent='Reactivating…';}
+  try{
+    const {data:j}=await portalJson('/OTP/{{ code }}/reactivate',{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest','Content-Type':'application/json'},body:JSON.stringify({lease:lease,reason:reason}),cache:'no-store'});
+    if(!j.ok){
+      if(btn){btn.disabled=false;btn.textContent='Reactivate';}
+      const errors={reason_required:'Choose a cancellation reason. Refresh the page to see the reason buttons.',otp_already_received:'An OTP has already arrived. This code cannot be reactivated.',mail_already_received:'A service message has already arrived. This code cannot be reactivated.',code_not_reactivatable:'This code has already received a message or is no longer available.',no_mailbox_available:'No new mailbox is available. Your current session is unchanged.',session_changed:'This session has changed. Refresh the page.',session_busy:'The session is updating. Please try again shortly.'};
+      alert(errors[j.error]||'Unable to reactivate. Please refresh the page and try again.');
+      return;
+    }
+    window.location.reload();
+  }catch(e){
+    if(btn){btn.disabled=false;btn.textContent='Reactivate';}
+    // A response can be lost after the DB switch. Check instead of issuing
+    // another POST, which could consume a second mailbox.
+    try{
+      const {data:j}=await portalJson('/OTP/{{ code }}/status',{cache:'no-store'},5000);
+      if(j.ok&&Array.isArray(j.lease)&&JSON.stringify(j.lease)!==JSON.stringify(lease)){window.location.reload();return;}
+    }catch(checkError){}
+    alert('The server response was delayed. Refresh the page to check the session before trying again.');
+  }finally{
+    _reactivating=false;
+    const current=document.getElementById('reactivateBtn');
+    if(current){current.disabled=false;current.textContent='Reactivate';}
+  }
+}
+function formatCountdown(totalSec){
+  let sec=Math.max(0,Math.floor(Number(totalSec)||0));
+  const days=Math.floor(sec/86400); sec%=86400;
+  const hours=Math.floor(sec/3600); sec%=3600;
+  const mins=Math.floor(sec/60); sec%=60;
+  const parts=[];
+  if(days>0) parts.push(String(days).padStart(2,'0')+'d');
+  if(hours>0) parts.push(String(hours).padStart(2,'0')+'h');
+  if(mins>0) parts.push(String(mins).padStart(2,'0')+'m');
+  parts.push(String(sec).padStart(2,'0')+'s');
+  return parts.join(' : ');
+}
+function parseCountdown(leftText){
+  const s=String(leftText||'').trim();
+  let m=s.match(/^(?:(\\d+)d\\s*:\s*)?(?:(\\d+)h\\s*:\s*)?(?:(\\d+)m\\s*:\s*)?(\\d+)s$/i);
+  if(m) return Number(m[1]||0)*86400+Number(m[2]||0)*3600+Number(m[3]||0)*60+Number(m[4]||0);
+  m=s.match(/^(\\d+):(\\d+)$/);
+  return m ? Number(m[1])*60+Number(m[2]) : 0;
+}
+function updateTimerState(j,localTick=false){
+  if(!localTick){
+    if(j&&Number.isFinite(Number(j.remaining_sec))){_countdownDeadline=Math.min(_countdownDeadline,performance.now()+Math.max(0,Number(j.remaining_sec))*1000);}
+    _timerState={...j};
+  }
+  j={...j,remaining_sec:Math.max(0,Math.ceil((_countdownDeadline-performance.now())/1000))};
+  j.time_up=!!j.time_up||j.remaining_sec<=0;
+  if(j&&Array.isArray(j.lease))_reactivateLease=j.lease;
+  if(j&&typeof j.time_up==='boolean')_reactivateTimeUp=j.time_up;
+  const rebuy=document.getElementById('rebuy-card');
+  if(rebuy) rebuy.style.display=(j&&j.can_buy_again)?'block':'none';
+  const box=document.getElementById('timer-box');
+  const left=document.getElementById('left');
+  if(!box) return;
+  const status=String((j&&j.status)||'').toLowerCase();
+  const hasOtp=!!(j&&j.has_otp);
+  const leftText=String((j&&j.left)||'');
+  const remainingRaw=Number(j&&j.remaining_sec);
+  const hasRemaining=Number.isFinite(remainingRaw);
+  const remainingSec=hasRemaining ? Math.max(0,Math.floor(remainingRaw)) : parseCountdown(leftText);
+  const timeUp=hasRemaining ? !!(j&&j.time_up) : (status==='expired' && remainingSec<=0);
+  // Show the same immediate state used by the inbox: any mail means
+  // "Mail received", and an extracted OTP means "OTP received".
+  // The session timer remains visible while the session is still active.
+  const mailN = Array.isArray(j&&j.mails) ? j.mails.length : Number((j&&j.mail_count)||0);
+  if(timeUp && hasOtp){
+    box.classList.add('status-done');box.classList.remove('status-expired');
+    box.innerHTML='<span class="timer-dot"></span><div class="timer-status done">OTP received</div>';
+    return;
+  }
+  if(timeUp && mailN>0){
+    box.classList.add('status-done');box.classList.remove('status-expired');
+    box.innerHTML='<span class="timer-dot"></span><div class="timer-status done">Mail received</div>';
+    return;
+  }
+  if(j&&j.can_reactivate && status==='expired' && timeUp){
+    box.classList.add('status-expired');box.classList.remove('status-done');
+    if(document.getElementById('left')||!document.getElementById('reactivateBtn'))box.innerHTML='<span class="timer-dot"></span><button type="button" id="reactivateBtn" class="btn btn-reactivate" onclick="reactivateCode()">Reactivate</button>';
+    const button=document.getElementById('reactivateBtn');button.disabled=_reactivating;button.textContent=_reactivating?'Reactivating…':'Reactivate';
+    return;
+  }
+  box.classList.remove('status-done','status-expired');
+  const formatted=formatCountdown(remainingSec);
+  const current=document.getElementById('left');
+  if(!current){box.innerHTML='<span class="timer-dot"></span><div class="timer" id="left">'+formatted+'</div>';}
+  else current.textContent=formatted;
+  const reactivate=document.getElementById('reactivateBtn');
+  if(j&&j.can_reactivate){
+    if(!reactivate){const b=document.createElement('button');b.type='button';b.id='reactivateBtn';b.className='btn btn-reactivate';b.disabled=_reactivating;b.textContent=_reactivating?'Reactivating…':'Reactivate';b.onclick=reactivateCode;box.append(b);}
+  }else if(reactivate){reactivate.remove();}
+}
+
+async function tick(){
+  try{
+    const {response:r,data:j}=await portalJson('/OTP/{{ code }}/status',{cache:'no-store'},8000);
+    if(j.ok&&Array.isArray(j.lease)&&JSON.stringify(j.lease)!==_pageLease){window.location.reload();return;}
+    if(j.time_up || j.status==='removed' || r.status===404 || r.status===410){_endPolls++;}else{_endPolls=0;}
+    updateTimerState(j);
+    renderSessionHistory(j.history_sessions);
+    if(j.left || Number.isFinite(Number(j&&j.remaining_sec))){const p=document.getElementById('progress-bar');if(p){const sec=Number.isFinite(Number(j&&j.remaining_sec)) ? Math.max(0,Math.floor(Number(j.remaining_sec))) : parseCountdown(j.left);const total=parseCountdown('{{ left or "00d : 03h : 00m : 00s" }}');p.style.width=Math.max(0,Math.min(100,(sec/Math.max(1,total))*100))+'%';}}
+    const oldMails=Array.isArray(j.history_mails)?j.history_mails:[];
+    renderMails(oldMails.concat(Array.isArray(j.mails)?j.mails:[]));
+  }catch(e){}
+}
+// Adaptive polling keeps the portal responsive under heavy concurrent use.
+let _pollBusy=false;
+let _endPolls=0;
+async function pollLoop(){
+  if(_pollBusy){ setTimeout(pollLoop,2000); return; }
+  _pollBusy=true;
+  try{ await tick(); }finally{
+    _pollBusy=false;
+    // Live sessions: check every 2s in both visible and hidden tabs.
+    // One final refresh after the deadline includes the watcher's last mail.
+    if(_endPolls<2){setTimeout(pollLoop,2000);}
+  }
+}
+pollLoop();
+// This uses the saved server deadline and makes no extra network requests.
+setInterval(()=>updateTimerState(_timerState,true),1000);
+function copyMail(){const e=document.getElementById('email');if(!e)return;const value=e.textContent||'';if(navigator.clipboard)navigator.clipboard.writeText(value);else{const t=document.createElement('textarea');t.value=value;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();}const b=document.getElementById('copyBtn');if(b){const old=b.textContent;b.textContent='Copied ✓';setTimeout(()=>b.textContent=old,1200);}}
+</script>
+{% endif %}
+</body></html>

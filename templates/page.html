@@ -106,7 +106,7 @@ function renderMail(m){
   pane.appendChild(head);
   if(m && m.body_url){
     const f=document.createElement('iframe');f.setAttribute('title','Email preview');
-    f.setAttribute('sandbox','allow-popups allow-popups-to-escape-sandbox');
+    // sandbox removed so full HTML (images + styles) can render
     f.referrerPolicy='no-referrer';f.src=m.body_url;pane.appendChild(f);
   }
   else {

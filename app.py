@@ -159,7 +159,17 @@ def message(code,message_id):
     if not re.fullmatch(r'[0-9a-f]{64}',message_id):abort(404)
     raw,status,headers=upstream('portal/message',{'code':code,'message_id':message_id})
     response=Response(raw,status=status,mimetype='text/html' if status==200 else 'text/plain')
-    response.headers['Content-Security-Policy']="default-src 'none'; sandbox allow-popups allow-popups-to-escape-sandbox; base-uri 'none'; form-action 'none'"
+    # More permissive CSP so full HTML emails (images, styles, fonts) can render.
+    # Scripts are still blocked for safety.
+    response.headers['Content-Security-Policy']=(
+        "default-src 'none'; "
+        "img-src https: data:; "
+        "style-src 'unsafe-inline' https:; "
+        "font-src https: data:; "
+        "media-src https:; "
+        "sandbox allow-popups allow-popups-to-escape-sandbox; "
+        "base-uri 'none'; form-action 'none'"
+    )
     return response
 
 _logo_cache={}

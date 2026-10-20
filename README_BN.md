@@ -1,125 +1,186 @@
 # নিজের Portal Inbox Website সেটআপ
 
-এই repository-তে Flask দিয়ে তৈরি একটি website আছে। এটি আপনার নিয়ন্ত্রণে থাকা domain-এ চালিয়ে Portal service-এর inbox page দেখায়।
+এই repository-তে Flask দিয়ে তৈরি website আছে। এটি আপনার নিয়ন্ত্রণে থাকা domain-এ চালিয়ে Portal service-এর inbox page দেখায়।
 
-**গুরুত্বপূর্ণ:** এই repository-তে website-এর অংশটি আছে। Portal backend, mail storage, বা Portal code তৈরি করার API এতে নেই। সম্পূর্ণ আলাদা service চালাতে হলে সামঞ্জস্যপূর্ণ Portal backend নিজে চালাতে হবে, অথবা অনুমোদিত access নিতে হবে।
+**গুরুত্বপূর্ণ:** এখানে website application-টি আছে। Portal backend, mail storage, বা Portal code তৈরি করার API নেই। সম্পূর্ণ নিজস্ব service চালাতে হলে সামঞ্জস্যপূর্ণ Portal backend ও mail system আলাদাভাবে সেটআপ করতে হবে।
 
-English নির্দেশনার জন্য [README.md](README.md) দেখুন.
+English নির্দেশনার জন্য [README.md](README.md) দেখুন।
 
-## কোন অংশ কীসের সঙ্গে যুক্ত
-
-এখানে দুটি আলাদা সংযোগ আছে:
+## কোন অংশ কোথায় যুক্ত হবে
 
 | অংশ | কাজ |
 | --- | --- |
-| আপনার website domain, যেমন `inbox.yourdomain.com` | ব্যবহারকারী এই ঠিকানায় website খুলবে। DNS এই domain-কে Flask project চালানো hosting-এ পাঠাবে। |
-| `PORTAL_API_BASE` | Website server inbox page ও status-এর তথ্য Portal backend API থেকে আনবে। এটি আপনার website domain নয়। |
-| `PORTAL_WEB_BASE` | Website server আসল message HTML Portal website থেকে আনবে। API host ও website host আলাদা হতে পারে। |
+| আপনার domain, যেমন `inbox.yourdomain.com` | ব্যবহারকারী এই ঠিকানায় website খুলবে। DNS এই domain-কে website চালানো VPS-এ পাঠাবে। |
+| `PORTAL_API_BASE` | Website server Portal backend API থেকে inbox page ও status নেবে। এটি আপনার website domain নয়। |
+| `PORTAL_WEB_BASE` | Website server আসল message HTML Portal website থেকে নেবে। API host ও website host আলাদা হতে পারে। |
 
-শুধু domain থাকলেই Portal API বা mail service পাওয়া যায় না। Backend-কে এই project-এর প্রয়োজনীয় API route সমর্থন করতে হবে এবং API key ব্যবহারের অনুমতি দিতে হবে।
+শুধু domain থাকলেই Portal API বা mail service পাওয়া যায় না। Backend-কে এই project-এর প্রয়োজনীয় API route দিতে হবে এবং API key ব্যবহারের অনুমতি দিতে হবে।
 
 ## যা লাগবে
 
+- Root বা sudo access-সহ Ubuntu/Debian VPS।
 - যে domain বা subdomain-এর DNS আপনি নিয়ন্ত্রণ করেন।
-- Python 3 চালাতে পারে এমন hosting—যেমন Render বা VPS।
 - সামঞ্জস্যপূর্ণ Portal backend-এর অনুমোদিত API key।
 - `/OTP/<code>/message/<message_id>` route চালায় এমন Portal website-এর HTTPS URL।
 
-আপনার যদি শুধু domain থাকে এবং সম্পূর্ণ mail/Portal system নিজের করতে চান, এই repository একা যথেষ্ট নয়—backend ও mail system আলাদাভাবে সেটআপ করতে হবে।
+শুধু domain থাকলে এবং সম্পূর্ণ mail/Portal system নিজের করতে চাইলে, এই repository একা যথেষ্ট নয়। Backend ও mail system আলাদাভাবে সেটআপ করতে হবে।
 
-## ১. Website deploy করুন
+## ১. Domain VPS-এ যুক্ত করুন
 
-Render-এ:
+`inbox.yourdomain.com`-এর মতো একটি subdomain বেছে নিন। DNS provider-এর dashboard-এ ওই subdomain-এর জন্য VPS-এর public IP দিয়ে একটি **A record** তৈরি করুন। DNS ছড়িয়ে পড়তে কিছু সময় লাগতে পারে।
 
-1. Repository-টি আপনার GitHub account-এ fork করুন।
-2. Render-এ **New → Web Service** বেছে fork করা repository connect করুন।
-3. সেটিংস দিন:
-   - **Runtime:** Python 3
-   - **Build command:** `pip install -r requirements.txt`
-   - **Start command:** `gunicorn --workers 2 --threads 4 --timeout 30 --bind 0.0.0.0:$PORT app:app`
-4. Service-এর **Environment** settings-এ নিচে দেওয়া variable-গুলো যোগ করুন।
-5. Deploy করুন। Hosting একটি অস্থায়ী service URL দেবে। Website পরীক্ষা করতে URL-এর শেষে `/OTP` খুলুন।
+আপনার মূল website-এর DNS record পরিবর্তন করবেন না। শুধু নতুন subdomain-টি এই Flask website-এর VPS-এ যাবে।
 
-অন্য Python hosting-এও একই build ও start command ব্যবহার করা যায়। VPS-এ Gunicorn-কে production web server ও HTTPS reverse proxy-র পেছনে চালান। Flask development server সরাসরি public internet-এ প্রকাশ করবেন না।
+## ২. Ubuntu/Debian VPS-এ website ইনস্টল করুন
 
-## ২. নিজের domain যুক্ত করুন
+SSH দিয়ে VPS-এ ঢুকে প্রয়োজনীয় package ইনস্টল করুন:
 
-আপনার মূল website আগে থেকেই অন্য hosting-এ থাকলে `inbox.yourdomain.com`-এর মতো আলাদা subdomain ব্যবহার করা সুবিধাজনক।
+```bash
+sudo apt update
+sudo apt install -y python3 python3-venv python3-pip git nginx certbot python3-certbot-nginx
+```
 
-1. Hosting provider-এর custom-domain settings-এ subdomain যোগ করুন।
-2. DNS provider-এর dashboard-এ hosting provider দেখানো CNAME বা A record বসান। DNS-এর মান hosting অনুযায়ী আলাদা হয়—আপনার dashboard-এ দেখানো মানই ব্যবহার করুন।
-3. DNS যাচাই ও HTTPS certificate চালু হওয়া পর্যন্ত অপেক্ষা করুন।
-4. `https://inbox.yourdomain.com/OTP` খুলুন।
-5. মূল website থেকেও ব্যবহারকারীদের পাঠাতে চাইলে সেখানে এই ঠিকানার button বা link যোগ করুন।
+অ্যাপ চালানোর জন্য আলাদা system user তৈরি করে project নামান:
 
-VPS হলে domain-এর A record VPS-এর public IP-তে দিন। এরপর Nginx, Caddy বা অন্য HTTPS reverse proxy এমনভাবে সেট করুন যেন request Gunicorn-এ যায়। Website দেখাতে domain-টিকে এই Flask service-এ route করতে হবে।
+```bash
+sudo useradd --system --home /opt/portal-website --create-home --shell /usr/sbin/nologin portalweb
+sudo git clone https://github.com/taslima68533-hue/Portal_Reader.git /opt/portal-website
+sudo chown -R portalweb:portalweb /opt/portal-website
+sudo -u portalweb python3 -m venv /opt/portal-website/.venv
+sudo -u portalweb /opt/portal-website/.venv/bin/pip install -r /opt/portal-website/requirements.txt
+```
 
-## ৩. Portal backend-এর সংযোগ সেট করুন
+## ৩. Environment variable সেট করুন
 
-Hosting dashboard-এ নিচের variable-গুলো দিন। API base-এ সামঞ্জস্যপূর্ণ Portal API-এর আসল URL বসবে; নতুন website-এর domain নয়।
+VPS-এ private environment file তৈরি করুন:
 
-| Variable | লাগবে? | কী বসবে |
-| --- | --- | --- |
-| `PORTAL_API_BASE` | হ্যাঁ | HTTPS API base URL, শেষে `/api/v1`-সহ; যেমন `https://portal.example.com/api/v1`। |
-| `PORTAL_API_KEY` | হ্যাঁ | এই deployment-এর জন্য Portal backend থেকে পাওয়া API key। গোপন রাখুন। |
-| `READER_SESSION_SECRET` | হ্যাঁ | অন্তত ৩২ অক্ষরের আলাদা random secret। নিচের command দিয়ে তৈরি করুন। |
-| `PORTAL_WEB_BASE` | সাধারণত | আসল message HTML দেওয়া Portal website-এর HTTPS origin; যেমন `https://portal.example.com`। না দিলে অ্যাপ `PORTAL_API_BASE`-এর origin নেয়। |
-| `READER_COOKIE_SECURE` | production-এ হ্যাঁ | HTTPS হলে `true` দিন। শুধু local HTTP test-এ `false` ব্যবহার করুন। |
-| `PORT` | না | Render ও অনেক hosting নিজে থেকে সেট করে। সরাসরি চালালে app-এর default port `5000`। |
+```bash
+sudo nano /etc/portal-website.env
+```
 
-নতুন session secret তৈরি করুন:
+নিজের আসল মানগুলো যোগ করুন:
+
+```env
+PORTAL_API_BASE=https://portal.example.com/api/v1
+PORTAL_API_KEY=your-authorized-api-key
+READER_SESSION_SECRET=replace-with-a-unique-random-secret
+PORTAL_WEB_BASE=https://portal.example.com
+READER_COOKIE_SECURE=true
+PORT=8000
+```
+
+বিশ্বস্ত কম্পিউটারে নতুন random session secret তৈরি করুন:
 
 ```bash
 python3 -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
-এই repository-র আগের setup-এ API base হিসেবে `https://hridoybothub.online/api/v1` দেওয়া ছিল। ওই Portal ব্যবহারের অনুমতি থাকলেই এটি ব্যবহার করুন। নিজের backend হলে নিজের API URL ও key বসান। `PORTAL_WEB_BASE`-এ message route যে host-এ চলে, সেই host দিন।
+উদাহরণের Portal URL ও API key-এর জায়গায় অনুমোদিত Portal backend-এর আসল মান বসান। API base-এর শেষে `/api/v1` থাকতে হবে। `PORTAL_WEB_BASE`-এ message route যে website host-এ চলে সেটি দিন। Environment file-টি private রাখুন:
 
-## Website-এ request কীভাবে চলে
+```bash
+sudo chown root:root /etc/portal-website.env
+sudo chmod 600 /etc/portal-website.env
+```
+
+আসল API key বা secret কখনো GitHub-এ রাখবেন না।
+
+## ৪. systemd ও Gunicorn দিয়ে চালান
+
+Service file তৈরি করুন:
+
+```bash
+sudo nano /etc/systemd/system/portal-website.service
+```
+
+এটি paste করুন:
+
+```ini
+[Unit]
+Description=Portal Inbox Website
+After=network.target
+
+[Service]
+User=portalweb
+Group=portalweb
+WorkingDirectory=/opt/portal-website
+EnvironmentFile=/etc/portal-website.env
+ExecStart=/opt/portal-website/.venv/bin/gunicorn --workers 2 --threads 4 --timeout 30 --bind 127.0.0.1:8000 app:app
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Service চালু ও enable করুন:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now portal-website
+sudo systemctl status portal-website
+```
+
+Gunicorn শুধু VPS-এর ভেতরের `127.0.0.1:8000` address-এ শুনবে। Nginx public request গ্রহণ করে Gunicorn-এ পাঠাবে।
+
+## ৫. Nginx ও HTTPS সেট করুন
+
+Nginx site configuration তৈরি করুন:
+
+```bash
+sudo nano /etc/nginx/sites-available/portal-website
+```
+
+`inbox.yourdomain.com`-এর জায়গায় নিজের subdomain বসিয়ে এই config দিন:
+
+```nginx
+server {
+    listen 80;
+    server_name inbox.yourdomain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Site enable, Nginx test ও HTTPS certificate চালু করুন:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/portal-website /etc/nginx/sites-enabled/portal-website
+sudo nginx -t
+sudo systemctl reload nginx
+sudo certbot --nginx -d inbox.yourdomain.com
+```
+
+HTTPS চালু হলে `https://inbox.yourdomain.com/OTP` খুলুন। চাইলে মূল website-এ এই ঠিকানার link যোগ করুন। VPS এবং cloud firewall-এ HTTP/HTTPS-এর জন্য port 80 ও 443 খোলা থাকতে হবে।
+
+## Website request কীভাবে কাজ করে
 
 1. ব্যবহারকারী আপনার domain খুলে Portal code দেন।
-2. Flask website code-টি signed, HTTP-only session cookie-তে রাখে।
-3. Server নির্ধারিত Portal API-তে page/status/action-এর request পাঠায় এবং API key শুধু server থেকেই যোগ করে।
-4. Mail body দেখানোর জন্য server `PORTAL_WEB_BASE` থেকে HTML আনে এবং script বন্ধ রাখার policy-সহ ফেরত দেয়।
+2. Website code-টি signed, HTTP-only session cookie-তে রাখে।
+3. VPS নির্ধারিত Portal API থেকে page ও status নেয়; API key শুধু সার্ভার থেকে যোগ হয়।
+4. Message body চাইলে VPS `PORTAL_WEB_BASE` থেকে HTML এনে script বন্ধ রাখার policy-সহ ফেরত দেয়।
 
-এই project নিজস্ব database-এ inbox সংরক্ষণ করে না এবং Portal code ইস্যু করে না। বৈধ Portal code দিয়ে তার inbox খোলা যেতে পারে, তাই code গোপন রাখুন।
+এই project নিজস্ব database-এ inbox জমা রাখে না এবং Portal code ইস্যু করে না। বৈধ Portal code দিয়ে inbox খোলা যেতে পারে, তাই code গোপন রাখুন।
 
-## নিজের কম্পিউটারে পরীক্ষা
+## নিরাপত্তা ও রক্ষণাবেক্ষণ
 
-Dependency ইনস্টল করুন:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-একই terminal-এ environment variable সেট করে website চালান:
-
-```bash
-export PORTAL_API_BASE="https://portal.example.com/api/v1"
-export PORTAL_API_KEY="your-authorized-api-key"
-export READER_SESSION_SECRET="paste-a-unique-random-secret-here"
-export PORTAL_WEB_BASE="https://portal.example.com"
-export READER_COOKIE_SECURE="false"
-python app.py
-```
-
-Windows PowerShell-এ `$env:NAME="value"` ব্যবহার করে variable-গুলো সেট করে `python app.py` চালান। Browser-এ `http://127.0.0.1:5000/OTP` খুলুন। Public website-এ HTTPS চালু করে `READER_COOKIE_SECURE=true` রাখুন।
-
-## নিরাপত্তা
-
-- API key বা session secret GitHub-এ commit করবেন না।
-- প্রতিটি deployment-এর জন্য আলাদা random session secret ব্যবহার করুন।
-- Public website-এ HTTPS ব্যবহার করুন।
+- `/etc/portal-website.env` private রাখুন; GitHub-এ commit করবেন না।
+- আলাদা random session secret ব্যবহার করুন এবং HTTPS website-এ `READER_COOKIE_SECURE=true` রাখুন।
 - অন্য Portal operator-এর API ব্যবহার করার আগে অনুমতি নিন।
-- API key বা secret ফাঁস হলে issuer-এর কাছে revoke/rotate করে hosting-এর variable-ও বদলান।
-- Portal provider-এর শর্ত এবং প্রযোজ্য privacy requirement মেনে চলুন।
+- Secret ফাঁস হলে revoke/rotate করে environment file-এ নতুন মান দিন।
+- Service log দেখতে `sudo journalctl -u portal-website -f` চালান।
+- Code update করার পর `sudo systemctl restart portal-website` চালান।
+- Portal provider-এর শর্ত ও প্রযোজ্য privacy requirement মেনে চলুন।
 
 ## Project files
 
-- `app.py` — Flask website এবং API সংযোগ।
+- `app.py` — Flask website ও Portal API সংযোগ।
 - `templates/page.html` — HTML page template।
-- `requirements.txt` — Python dependencies।
-- `Procfile` — production start command।
+- `requirements.txt` — Python dependency।
+- `Procfile` — সামঞ্জস্যপূর্ণ hosting-এর start command।
 - `runtime.txt` — Python runtime declaration।

@@ -1,83 +1,88 @@
-# Portal Inbox Reader
+# নিজের Portal Inbox Website সেটআপ
 
-এটি একটি বিদ্যমান Portal সার্ভিসের জন্য Flask-ভিত্তিক ওয়েব রিডার। নিজের হোস্টিংয়ে অ্যাপটি চালিয়ে আপনার নিয়ন্ত্রণে থাকা ডোমেইন যুক্ত করলে ব্যবহারকারীরা সেই ওয়েব ঠিকানা থেকে Portal inbox খুলতে পারবেন।
+এই repository-তে Flask দিয়ে তৈরি একটি website আছে। এটি আপনার নিয়ন্ত্রণে থাকা domain-এ চালিয়ে Portal service-এর inbox page দেখায়।
 
-> **এটি শুধু inbox reader; স্বতন্ত্র mail বা sales platform নয়।** এটি Portal code তৈরি, পণ্য বিক্রি বা পেমেন্ট প্রসেস করে না। চালাতে হলে সামঞ্জস্যপূর্ণ Portal API এবং মেইলের HTML সরবরাহকারী Portal website-এ অনুমোদিত access লাগবে।
+**গুরুত্বপূর্ণ:** এই repository-তে website-এর অংশটি আছে। Portal backend, mail storage, বা Portal code তৈরি করার API এতে নেই। সম্পূর্ণ আলাদা service চালাতে হলে সামঞ্জস্যপূর্ণ Portal backend নিজে চালাতে হবে, অথবা অনুমোদিত access নিতে হবে।
 
-English নির্দেশনার জন্য [README.md](README.md) দেখুন।
+English নির্দেশনার জন্য [README.md](README.md) দেখুন.
 
-## অ্যাপটি কী করে
+## কোন অংশ কীসের সঙ্গে যুক্ত
 
-- Portal-এর inbox page, mail list, preview, countdown এবং উপলব্ধ action দেখায়।
-- সমর্থিত page, status, reactivate, start ও logo request Flask server-এর মাধ্যমে Portal-এ পাঠায়।
-- Portal API key সার্ভারে রাখে; ব্যবহারকারীর browser-এ পাঠায় না।
-- নির্ধারিত Portal website থেকে message-এর HTML নিয়ে ফেরত দেয়; Content Security Policy দিয়ে message-এর script চালানো বন্ধ রাখে।
-- signed, HTTP-only browser session-এ ব্যবহারকারীর দেওয়া Portal code মনে রাখে।
+এখানে দুটি আলাদা সংযোগ আছে:
 
-অ্যাপটির নিজস্ব mail database নেই। Portal code দিয়ে সংশ্লিষ্ট inbox খোলা যায়, তাই code-কে password-এর মতো গোপন রাখুন।
-
-## যা যা লাগবে
-
-1. Python 3 চালাতে পারে এমন hosting—Render, অন্য Python hosting, অথবা আপনার VPS।
-2. যে domain বা subdomain-এর DNS আপনি নিয়ন্ত্রণ করেন।
-3. সামঞ্জস্যপূর্ণ Portal API-এর জন্য অনুমোদিত API key।
-4. যে Portal website `/OTP/<code>/message/<message_id>` route চালায়, তার URL।
-
-এই অ্যাপ নিজে থেকে যেকোনো website বা mail provider-এর সঙ্গে যুক্ত হতে পারে না। অন্য কারও Portal-এ যুক্ত হলে তাদের অনুমতি এবং আপনার ব্যবহারের জন্য ইস্যু করা API key লাগবে। API host ও website host আলাদা হতে পারে।
-
-## নিজের website/domain-এ reader যুক্ত করুন
-
-Reader-টি নিজস্ব Python web service হিসেবে চলে। নিজের website-এর ঠিকানা থেকে এটি ব্যবহার করতে হলে আগে hosting-এ deploy করুন, তারপর আপনার নিয়ন্ত্রণে থাকা domain বা subdomain-কে ওই service-এর সঙ্গে যুক্ত করুন।
-
-1. নিচের নির্দেশনা অনুযায়ী repository-টি Render, অন্য Python hosting, অথবা VPS-এ deploy করুন।
-2. আলাদা একটি subdomain নিন, যেমন `inbox.yourdomain.com`। মূল website আগে থেকেই অন্য hosting-এ থাকলে subdomain ব্যবহার করাই ভালো।
-3. Hosting dashboard-এর custom-domain settings-এ subdomain যোগ করুন। Hosting provider যে CNAME/A-record target দেখাবে, DNS-এ ঠিক সেটিই বসান। VPS হলে domain-এর A record VPS-এর IP-তে দিন এবং Flask/Gunicorn service-এর সামনে HTTPS reverse proxy সেট করুন।
-4. DNS ও HTTPS চালু হওয়া পর্যন্ত অপেক্ষা করুন। এরপর `https://inbox.yourdomain.com/OTP` খুলুন। চাইলে আপনার মূল website-এ এই ঠিকানার একটি link বা button যোগ করুন।
-
-এতে **reader website-এর ঠিকানা** reader service-এ যুক্ত হবে। এটি স্বয়ংক্রিয়ভাবে যেকোনো website-এর backend-এর সঙ্গে যুক্ত হয় না। এই অ্যাপ চালাতে সামঞ্জস্যপূর্ণ Portal API এবং সেই API key ব্যবহারের অনুমতি আলাদাভাবে লাগবে।
-
-| ঠিকানা/সেটিং | কীসের সঙ্গে যুক্ত হয় |
+| অংশ | কাজ |
 | --- | --- |
-| আপনার domain, যেমন `inbox.yourdomain.com` | ব্যবহারকারীর browser-কে এই reader app-এ পাঠায়। Hosting ও DNS-এ সেট করতে হবে। |
-| `PORTAL_API_BASE` | Reader app-কে Portal backend API-এর সঙ্গে যুক্ত করে। এটি নতুন reader website-এর ঠিকানা নয়। |
-| `PORTAL_WEB_BASE` | Reader app-কে original message HTML সরবরাহকারী Portal website-এর সঙ্গে যুক্ত করে। |
+| আপনার website domain, যেমন `inbox.yourdomain.com` | ব্যবহারকারী এই ঠিকানায় website খুলবে। DNS এই domain-কে Flask project চালানো hosting-এ পাঠাবে। |
+| `PORTAL_API_BASE` | Website server inbox page ও status-এর তথ্য Portal backend API থেকে আনবে। এটি আপনার website domain নয়। |
+| `PORTAL_WEB_BASE` | Website server আসল message HTML Portal website থেকে আনবে। API host ও website host আলাদা হতে পারে। |
 
-আপনার নিজের Portal backend থাকলে সেটির অনুমোদিত API ও website URL ব্যবহার করুন। শুধু একটি অন্য ধরনের website থাকলে, এবং সামঞ্জস্যপূর্ণ Portal API না থাকলে, শুধু domain বসিয়ে কাজ হবে না—backend integration আলাদাভাবে তৈরি করতে হবে।
+শুধু domain থাকলেই Portal API বা mail service পাওয়া যায় না। Backend-কে এই project-এর প্রয়োজনীয় API route সমর্থন করতে হবে এবং API key ব্যবহারের অনুমতি দিতে হবে।
 
-## সার্ভার কনফিগার করুন
+## যা লাগবে
 
-Hosting dashboard-এ নিচের environment variable-গুলো সেট করুন। আসল secret public repository-তে রাখবেন না।
+- যে domain বা subdomain-এর DNS আপনি নিয়ন্ত্রণ করেন।
+- Python 3 চালাতে পারে এমন hosting—যেমন Render বা VPS।
+- সামঞ্জস্যপূর্ণ Portal backend-এর অনুমোদিত API key।
+- `/OTP/<code>/message/<message_id>` route চালায় এমন Portal website-এর HTTPS URL।
 
-| Variable | লাগবে? | কাজ |
+আপনার যদি শুধু domain থাকে এবং সম্পূর্ণ mail/Portal system নিজের করতে চান, এই repository একা যথেষ্ট নয়—backend ও mail system আলাদাভাবে সেটআপ করতে হবে।
+
+## ১. Website deploy করুন
+
+Render-এ:
+
+1. Repository-টি আপনার GitHub account-এ fork করুন।
+2. Render-এ **New → Web Service** বেছে fork করা repository connect করুন।
+3. সেটিংস দিন:
+   - **Runtime:** Python 3
+   - **Build command:** `pip install -r requirements.txt`
+   - **Start command:** `gunicorn --workers 2 --threads 4 --timeout 30 --bind 0.0.0.0:$PORT app:app`
+4. Service-এর **Environment** settings-এ নিচে দেওয়া variable-গুলো যোগ করুন।
+5. Deploy করুন। Hosting একটি অস্থায়ী service URL দেবে। Website পরীক্ষা করতে URL-এর শেষে `/OTP` খুলুন।
+
+অন্য Python hosting-এও একই build ও start command ব্যবহার করা যায়। VPS-এ Gunicorn-কে production web server ও HTTPS reverse proxy-র পেছনে চালান। Flask development server সরাসরি public internet-এ প্রকাশ করবেন না।
+
+## ২. নিজের domain যুক্ত করুন
+
+আপনার মূল website আগে থেকেই অন্য hosting-এ থাকলে `inbox.yourdomain.com`-এর মতো আলাদা subdomain ব্যবহার করা সুবিধাজনক।
+
+1. Hosting provider-এর custom-domain settings-এ subdomain যোগ করুন।
+2. DNS provider-এর dashboard-এ hosting provider দেখানো CNAME বা A record বসান। DNS-এর মান hosting অনুযায়ী আলাদা হয়—আপনার dashboard-এ দেখানো মানই ব্যবহার করুন।
+3. DNS যাচাই ও HTTPS certificate চালু হওয়া পর্যন্ত অপেক্ষা করুন।
+4. `https://inbox.yourdomain.com/OTP` খুলুন।
+5. মূল website থেকেও ব্যবহারকারীদের পাঠাতে চাইলে সেখানে এই ঠিকানার button বা link যোগ করুন।
+
+VPS হলে domain-এর A record VPS-এর public IP-তে দিন। এরপর Nginx, Caddy বা অন্য HTTPS reverse proxy এমনভাবে সেট করুন যেন request Gunicorn-এ যায়। Website দেখাতে domain-টিকে এই Flask service-এ route করতে হবে।
+
+## ৩. Portal backend-এর সংযোগ সেট করুন
+
+Hosting dashboard-এ নিচের variable-গুলো দিন। API base-এ সামঞ্জস্যপূর্ণ Portal API-এর আসল URL বসবে; নতুন website-এর domain নয়।
+
+| Variable | লাগবে? | কী বসবে |
 | --- | --- | --- |
-| `PORTAL_API_BASE` | হ্যাঁ | Portal API-এর HTTPS base URL, শেষে `/api/v1`-সহ; যেমন `https://portal.example.com/api/v1`। |
-| `PORTAL_API_KEY` | হ্যাঁ | Portal API কর্তৃক অনুমোদিত API key। গোপন রাখুন। |
-| `READER_SESSION_SECRET` | হ্যাঁ | অন্তত ৩২ অক্ষরের নতুন random secret। API key বা অন্য অ্যাপের secret পুনরায় ব্যবহার করবেন না। |
-| `PORTAL_WEB_BASE` | সাধারণত | message HTML সরবরাহকারী Portal website-এর HTTPS origin; যেমন `https://portal.example.com`। না দিলে অ্যাপ `PORTAL_API_BASE`-এর origin ব্যবহার করে। website-এর host আলাদা হলে এটি অবশ্যই সেট করুন। |
-| `READER_COOKIE_SECURE` | production-এ হ্যাঁ | HTTPS-এ reader চালালে `true` দিন। শুধু local HTTP test-এ `false` ব্যবহার করুন। |
-| `PORT` | না | Render ও অনেক hosting নিজে থেকে সেট করে। সরাসরি চালালে অ্যাপের default port `5000`। |
+| `PORTAL_API_BASE` | হ্যাঁ | HTTPS API base URL, শেষে `/api/v1`-সহ; যেমন `https://portal.example.com/api/v1`। |
+| `PORTAL_API_KEY` | হ্যাঁ | এই deployment-এর জন্য Portal backend থেকে পাওয়া API key। গোপন রাখুন। |
+| `READER_SESSION_SECRET` | হ্যাঁ | অন্তত ৩২ অক্ষরের আলাদা random secret। নিচের command দিয়ে তৈরি করুন। |
+| `PORTAL_WEB_BASE` | সাধারণত | আসল message HTML দেওয়া Portal website-এর HTTPS origin; যেমন `https://portal.example.com`। না দিলে অ্যাপ `PORTAL_API_BASE`-এর origin নেয়। |
+| `READER_COOKIE_SECURE` | production-এ হ্যাঁ | HTTPS হলে `true` দিন। শুধু local HTTP test-এ `false` ব্যবহার করুন। |
+| `PORT` | না | Render ও অনেক hosting নিজে থেকে সেট করে। সরাসরি চালালে app-এর default port `5000`। |
 
-বিশ্বস্ত কম্পিউটারে session secret তৈরি করুন:
+নতুন session secret তৈরি করুন:
 
 ```bash
 python3 -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
-এই repository-র Portal-এর জন্য আগের deployment নির্দেশনায় API base হিসেবে `https://hridoybothub.online/api/v1` দেওয়া আছে। `PORTAL_WEB_BASE`-এ সেই Portal website-এর origin দিন যেটি সত্যিই message route চালায়। API এবং website-এর host একই—এটি ধরে নেবেন না।
+এই repository-র আগের setup-এ API base হিসেবে `https://hridoybothub.online/api/v1` দেওয়া ছিল। ওই Portal ব্যবহারের অনুমতি থাকলেই এটি ব্যবহার করুন। নিজের backend হলে নিজের API URL ও key বসান। `PORTAL_WEB_BASE`-এ message route যে host-এ চলে, সেই host দিন।
 
-## Render-এ চালু করুন
+## Website-এ request কীভাবে চলে
 
-1. এই repository আপনার GitHub account-এ fork করুন, অথবা deploy করার অনুমতি আছে এমন repository connect করুন।
-2. Render-এ **New → Web Service** বেছে repository connect করুন।
-3. Service settings দিন:
-   - **Runtime:** Python 3
-   - **Build command:** `pip install -r requirements.txt`
-   - **Start command:** `gunicorn --workers 2 --threads 4 --timeout 30 --bind 0.0.0.0:$PORT app:app`
-4. **Environment** অংশে উপরের তালিকার variable-গুলো যোগ করুন। আসল API key ও session secret সেখানে দিন, source file-এ নয়।
-5. Deploy করে service URL-এর শেষে `/OTP` খুলুন।
-6. নিজের domain ব্যবহার করতে Render service-এর **Custom Domains**-এ domain যোগ করুন এবং Render দেখানো DNS record সেট করুন। সাইট ব্যবহারের আগে DNS ও HTTPS চালু হওয়া পর্যন্ত অপেক্ষা করুন।
+1. ব্যবহারকারী আপনার domain খুলে Portal code দেন।
+2. Flask website code-টি signed, HTTP-only session cookie-তে রাখে।
+3. Server নির্ধারিত Portal API-তে page/status/action-এর request পাঠায় এবং API key শুধু server থেকেই যোগ করে।
+4. Mail body দেখানোর জন্য server `PORTAL_WEB_BASE` থেকে HTML আনে এবং script বন্ধ রাখার policy-সহ ফেরত দেয়।
 
-একই build ও start command সামঞ্জস্যপূর্ণ অন্য Python hosting-এও চলে। VPS-এ production web server এবং HTTPS reverse proxy-র পেছনে অ্যাপটি চালান; Flask development server সরাসরি internet-এ প্রকাশ করবেন না।
+এই project নিজস্ব database-এ inbox সংরক্ষণ করে না এবং Portal code ইস্যু করে না। বৈধ Portal code দিয়ে তার inbox খোলা যেতে পারে, তাই code গোপন রাখুন।
 
 ## নিজের কম্পিউটারে পরীক্ষা
 
@@ -89,7 +94,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Shell-এ প্রয়োজনীয় environment variable সেট করে চালান:
+একই terminal-এ environment variable সেট করে website চালান:
 
 ```bash
 export PORTAL_API_BASE="https://portal.example.com/api/v1"
@@ -100,30 +105,21 @@ export READER_COOKIE_SECURE="false"
 python app.py
 ```
 
-Windows PowerShell-এ `$env:NAME="value"` লিখে variable সেট করুন—যেমন `$env:READER_COOKIE_SECURE="false"`—তারপর `python app.py` চালান। Browser-এ `http://127.0.0.1:5000/OTP` খুলুন। Public deployment-এ HTTPS ব্যবহার করুন এবং `READER_COOKIE_SECURE=true` রাখুন।
-
-## Request কীভাবে কাজ করে
-
-1. ব্যবহারকারী reader খুলে Portal code দেন।
-2. Reader code-টি ব্যবহারকারীর signed session cookie-তে রাখে।
-3. Flask সমর্থিত request নির্ধারিত Portal API-তে পাঠায় এবং API key শুধু সার্ভার থেকে যোগ করে।
-4. Message body চাইলে Flask `PORTAL_WEB_BASE`-এর সংশ্লিষ্ট message route থেকে HTML আনে এবং script বন্ধ রাখা policy-সহ browser-এ ফেরত দেয়।
-
-সার্ভার শুধু কনফিগার করা HTTPS host ও সমর্থিত API route ব্যবহার করে। Portal code তবু inbox খোলার bearer credential: বৈধ code যার হাতে যাবে, সে inbox দেখতে পারে। Code বা API key প্রকাশ্যে দেবেন না।
+Windows PowerShell-এ `$env:NAME="value"` ব্যবহার করে variable-গুলো সেট করে `python app.py` চালান। Browser-এ `http://127.0.0.1:5000/OTP` খুলুন। Public website-এ HTTPS চালু করে `READER_COOKIE_SECURE=true` রাখুন।
 
 ## নিরাপত্তা
 
-- `PORTAL_API_KEY` ও `READER_SESSION_SECRET` GitHub, screenshot বা log-এ রাখবেন না।
+- API key বা session secret GitHub-এ commit করবেন না।
 - প্রতিটি deployment-এর জন্য আলাদা random session secret ব্যবহার করুন।
-- HTTPS চালু রাখুন এবং `READER_COOKIE_SECURE=true` দিন।
-- API key-এর মালিকের অনুমতি ছাড়া সেটি দিয়ে deployment করবেন না।
-- Secret ফাঁস হলে সেটি যেখান থেকে ইস্যু হয়েছে সেখানে revoke/rotate করে hosting-এর variable-ও বদলান।
-- Inbox ও message ব্যবহারের ক্ষেত্রে Portal provider-এর নিয়ম এবং প্রযোজ্য privacy requirement মেনে চলুন।
+- Public website-এ HTTPS ব্যবহার করুন।
+- অন্য Portal operator-এর API ব্যবহার করার আগে অনুমতি নিন।
+- API key বা secret ফাঁস হলে issuer-এর কাছে revoke/rotate করে hosting-এর variable-ও বদলান।
+- Portal provider-এর শর্ত এবং প্রযোজ্য privacy requirement মেনে চলুন।
 
 ## Project files
 
-- `app.py` — Flask app এবং Portal proxy route।
-- `templates/page.html` — reader page template।
-- `requirements.txt` — Python dependency।
-- `Procfile` — সামঞ্জস্যপূর্ণ hosting-এর production start command।
+- `app.py` — Flask website এবং API সংযোগ।
+- `templates/page.html` — HTML page template।
+- `requirements.txt` — Python dependencies।
+- `Procfile` — production start command।
 - `runtime.txt` — Python runtime declaration।

@@ -25,6 +25,25 @@ English নির্দেশনার জন্য [README.md](README.md) দ�
 
 এই অ্যাপ নিজে থেকে যেকোনো website বা mail provider-এর সঙ্গে যুক্ত হতে পারে না। অন্য কারও Portal-এ যুক্ত হলে তাদের অনুমতি এবং আপনার ব্যবহারের জন্য ইস্যু করা API key লাগবে। API host ও website host আলাদা হতে পারে।
 
+## নিজের website/domain-এ reader যুক্ত করুন
+
+Reader-টি নিজস্ব Python web service হিসেবে চলে। নিজের website-এর ঠিকানা থেকে এটি ব্যবহার করতে হলে আগে hosting-এ deploy করুন, তারপর আপনার নিয়ন্ত্রণে থাকা domain বা subdomain-কে ওই service-এর সঙ্গে যুক্ত করুন।
+
+1. নিচের নির্দেশনা অনুযায়ী repository-টি Render, অন্য Python hosting, অথবা VPS-এ deploy করুন।
+2. আলাদা একটি subdomain নিন, যেমন `inbox.yourdomain.com`। মূল website আগে থেকেই অন্য hosting-এ থাকলে subdomain ব্যবহার করাই ভালো।
+3. Hosting dashboard-এর custom-domain settings-এ subdomain যোগ করুন। Hosting provider যে CNAME/A-record target দেখাবে, DNS-এ ঠিক সেটিই বসান। VPS হলে domain-এর A record VPS-এর IP-তে দিন এবং Flask/Gunicorn service-এর সামনে HTTPS reverse proxy সেট করুন।
+4. DNS ও HTTPS চালু হওয়া পর্যন্ত অপেক্ষা করুন। এরপর `https://inbox.yourdomain.com/OTP` খুলুন। চাইলে আপনার মূল website-এ এই ঠিকানার একটি link বা button যোগ করুন।
+
+এতে **reader website-এর ঠিকানা** reader service-এ যুক্ত হবে। এটি স্বয়ংক্রিয়ভাবে যেকোনো website-এর backend-এর সঙ্গে যুক্ত হয় না। এই অ্যাপ চালাতে সামঞ্জস্যপূর্ণ Portal API এবং সেই API key ব্যবহারের অনুমতি আলাদাভাবে লাগবে।
+
+| ঠিকানা/সেটিং | কীসের সঙ্গে যুক্ত হয় |
+| --- | --- |
+| আপনার domain, যেমন `inbox.yourdomain.com` | ব্যবহারকারীর browser-কে এই reader app-এ পাঠায়। Hosting ও DNS-এ সেট করতে হবে। |
+| `PORTAL_API_BASE` | Reader app-কে Portal backend API-এর সঙ্গে যুক্ত করে। এটি নতুন reader website-এর ঠিকানা নয়। |
+| `PORTAL_WEB_BASE` | Reader app-কে original message HTML সরবরাহকারী Portal website-এর সঙ্গে যুক্ত করে। |
+
+আপনার নিজের Portal backend থাকলে সেটির অনুমোদিত API ও website URL ব্যবহার করুন। শুধু একটি অন্য ধরনের website থাকলে, এবং সামঞ্জস্যপূর্ণ Portal API না থাকলে, শুধু domain বসিয়ে কাজ হবে না—backend integration আলাদাভাবে তৈরি করতে হবে।
+
 ## সার্ভার কনফিগার করুন
 
 Hosting dashboard-এ নিচের environment variable-গুলো সেট করুন। আসল secret public repository-তে রাখবেন না।

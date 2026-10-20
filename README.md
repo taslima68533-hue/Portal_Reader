@@ -27,6 +27,25 @@ You need:
 
 This app cannot connect to an arbitrary website or mail provider by itself. If you are connecting to someone else's Portal, you need their authorization and an API key issued for your use. The API host and website host may be different.
 
+## Connect the reader to a website you control
+
+The reader runs as its own Python web service. To make it available from your website address, deploy it first, then point a domain or subdomain you control to that service.
+
+1. Deploy this repository to Render, another Python host, or your VPS using the instructions below.
+2. Choose a dedicated subdomain, such as `inbox.yourdomain.com`. A subdomain is recommended when your main website is already running elsewhere.
+3. Add that domain in your hosting provider's custom-domain settings. Update DNS using the exact CNAME/A-record target shown by your host. For a VPS, point an A record to the VPS IP and configure an HTTPS reverse proxy to the Flask/Gunicorn service.
+4. Wait for DNS and HTTPS to become active. Then open `https://inbox.yourdomain.com/OTP`. You can also add a link or button to this URL from your existing website.
+
+This connects the **reader website address** to the reader service. It does not automatically connect the reader to an arbitrary website's backend. The Portal API must separately be compatible with this app and authorize its API key.
+
+| Setting | What it connects |
+| --- | --- |
+| Your domain, e.g. `inbox.yourdomain.com` | The visitor's browser to this reader app. Configure it in hosting/DNS. |
+| `PORTAL_API_BASE` | This reader app to the Portal backend API. It is not the address of your new reader website. |
+| `PORTAL_WEB_BASE` | This reader app to the Portal website that serves original message HTML. |
+
+If you already have a Portal backend, use its authorized API and website URLs. If you only have an unrelated website and no compatible Portal API, changing the domain alone is not enough; the backend integration must be implemented separately.
+
 ## Configure the service
 
 Set these environment variables in your hosting dashboard. Do not put real secrets in this public repository.

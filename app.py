@@ -13,6 +13,10 @@ SECRET=os.environ.get('READER_SESSION_SECRET','')
 parsed=urlsplit(API_BASE)
 if parsed.scheme!='https' or not parsed.netloc or parsed.username or parsed.query or parsed.fragment:
     raise RuntimeError('PORTAL_API_BASE must be a fixed HTTPS API URL')
+PORTAL_WEB_BASE=os.environ.get('PORTAL_WEB_BASE',f'{parsed.scheme}://{parsed.netloc}').rstrip('/')
+web_parsed=urlsplit(PORTAL_WEB_BASE)
+if web_parsed.scheme!='https' or not web_parsed.netloc or web_parsed.username or web_parsed.query or web_parsed.fragment:
+    raise RuntimeError('PORTAL_WEB_BASE must be a fixed HTTPS Portal URL')
 if not API_KEY or API_KEY.startswith('REPLACE_') or len(SECRET)<32 or SECRET.startswith('REPLACE_'):
     raise RuntimeError('Set PORTAL_API_KEY and a random READER_SESSION_SECRET (environment variables or .env)')
 app=Flask(__name__)
@@ -27,7 +31,12 @@ def upstream(endpoint,params=None,method='GET',body=None,form=None):
     if endpoint not in ('portal/page','portal/status','portal/message','portal/reactivate','portal/start','portal/logo'):
         raise ValueError('Unsupported API endpoint')
     url=API_BASE+'/'+endpoint+('?' + urlencode(params) if params else '')
-    headers={'X-API-Key':API_KEY,'Accept':'application/json' if endpoint!='portal/page' else 'text/html','User-Agent':'PortalInboxReader/1.0'}
+    wants_html = endpoint == 'portal/page'
+    headers={
+        'X-API-Key':API_KEY,
+        'Accept':'text/html, application/xhtml+xml;q=0.9, application/json;q=0.8' if wants_html else 'application/json',
+        'User-Agent':'PortalInboxReader/1.0',
+    }
     data=None
     if body is not None:data=json.dumps(body).encode();headers['Content-Type']='application/json'
     elif form is not None:data=urlencode(form).encode();headers['Content-Type']='application/x-www-form-urlencoded'
@@ -157,8 +166,22 @@ def reactivate(code):
 def message(code,message_id):
     code=authorize(code)
     if not re.fullmatch(r'[0-9a-f]{64}',message_id):abort(404)
-    raw,status,headers=upstream('portal/message',{'code':code,'message_id':message_id})
-    response=Response(raw,status=status,mimetype='text/html' if status==200 else 'text/plain')
+    # The reseller API deliberately sanitizes email HTML and removes styling.
+    # Fetch the Portal's own protected message route to preserve the original HTML.
+    url=PORTAL_WEB_BASE+'/OTP/'+code+'/message/'+message_id
+    req=Request(url,headers={'Accept':'text/html','User-Agent':'PortalInboxReader/1.0'})
+    try:
+        upstream_response=opener.open(req,timeout=15)
+    except HTTPError as exc:
+        upstream_response=exc
+    except (URLError,TimeoutError,OSError):
+        return Response('Portal message is temporarily unavailable.',status=503,content_type='text/plain; charset=utf-8')
+    with upstream_response:
+        raw=upstream_response.read(2*1024*1024+1)
+        status=upstream_response.status
+    if len(raw)>2*1024*1024:
+        return Response('Email content is too large to display.',status=502,content_type='text/plain; charset=utf-8')
+    response=Response(raw,status=status,content_type='text/html; charset=utf-8' if status==200 else 'text/plain; charset=utf-8')
     # More permissive CSP so full HTML emails (images, styles, fonts) can render.
     # Scripts are still blocked for safety.
     response.headers['Content-Security-Policy']=(

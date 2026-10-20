@@ -1,89 +1,92 @@
-# Portal Inbox Reader
+# Portal Inbox Website Setup
 
-A Flask web reader for an existing Portal service. Deploy it on your own hosting and connect a domain you control to give users a separate web address for opening their Portal inboxes.
+This repository contains a Flask website that presents inbox pages from a Portal service under a domain you control.
 
-> **This is a reader, not a standalone mail or sales platform.** It does not create Portal codes, sell products, or process payments. It needs access to a compatible Portal API and the Portal website that serves message HTML.
+**Important:** this repository contains the website layer. It does not include the Portal backend, mail storage, or an API that creates Portal codes. To run a complete independent service, you must also operate or obtain authorized access to a compatible Portal backend.
 
-বাংলা নির্দেশনার জন্য [README_BN.md](README_BN.md) দেখুন।
+বাংলা নির্দেশনার জন্য [README_BN.md](README_BN.md) দেখুন.
 
-## What it does
+## How the pieces connect
 
-- Displays the Portal's inbox page, mail list, previews, countdown, and available actions.
-- Proxies supported page, status, reactivate, start, and logo requests through the Flask server.
-- Keeps the Portal API key on the server; it is not sent to the visitor's browser.
-- Fetches a message's HTML from the configured Portal website and serves it with a Content Security Policy that blocks scripts.
-- Uses a signed, HTTP-only browser session to remember Portal codes entered by a visitor.
+There are two separate connections:
 
-The app does not have its own mail database. Portal codes grant access to the corresponding inbox, so treat them like passwords.
-
-## Requirements
-
-You need:
-
-1. A Python 3 service (Render, another Python host, or your own VPS).
-2. A domain or subdomain whose DNS you can manage.
-3. A valid API key for a compatible Portal API.
-4. The Portal website URL that serves `/OTP/<code>/message/<message_id>`.
-
-This app cannot connect to an arbitrary website or mail provider by itself. If you are connecting to someone else's Portal, you need their authorization and an API key issued for your use. The API host and website host may be different.
-
-## Connect the reader to a website you control
-
-The reader runs as its own Python web service. To make it available from your website address, deploy it first, then point a domain or subdomain you control to that service.
-
-1. Deploy this repository to Render, another Python host, or your VPS using the instructions below.
-2. Choose a dedicated subdomain, such as `inbox.yourdomain.com`. A subdomain is recommended when your main website is already running elsewhere.
-3. Add that domain in your hosting provider's custom-domain settings. Update DNS using the exact CNAME/A-record target shown by your host. For a VPS, point an A record to the VPS IP and configure an HTTPS reverse proxy to the Flask/Gunicorn service.
-4. Wait for DNS and HTTPS to become active. Then open `https://inbox.yourdomain.com/OTP`. You can also add a link or button to this URL from your existing website.
-
-This connects the **reader website address** to the reader service. It does not automatically connect the reader to an arbitrary website's backend. The Portal API must separately be compatible with this app and authorize its API key.
-
-| Setting | What it connects |
+| Item | Purpose |
 | --- | --- |
-| Your domain, e.g. `inbox.yourdomain.com` | The visitor's browser to this reader app. Configure it in hosting/DNS. |
-| `PORTAL_API_BASE` | This reader app to the Portal backend API. It is not the address of your new reader website. |
-| `PORTAL_WEB_BASE` | This reader app to the Portal website that serves original message HTML. |
+| Your website domain, such as `inbox.yourdomain.com` | Visitors open this address. DNS points it to the hosting service running this Flask project. |
+| `PORTAL_API_BASE` | The website server requests inbox pages and status data from the Portal backend API. This is not your website domain. |
+| `PORTAL_WEB_BASE` | The website server requests original message HTML from the Portal website. It can be a different host from the API. |
 
-If you already have a Portal backend, use its authorized API and website URLs. If you only have an unrelated website and no compatible Portal API, changing the domain alone is not enough; the backend integration must be implemented separately.
+A domain by itself does not provide the Portal API or mail service. The backend must support the API routes used by this project, and its owner must authorize the API key.
 
-## Configure the service
+## What you need
 
-Set these environment variables in your hosting dashboard. Do not put real secrets in this public repository.
+- A domain or subdomain whose DNS you can manage.
+- A Python 3 hosting service, such as Render, or a VPS.
+- An authorized API key for a compatible Portal backend.
+- The HTTPS URL of the Portal website that serves `/OTP/<code>/message/<message_id>`.
 
-| Variable | Required | Description |
+If you only have a domain and want the complete mail/Portal system to be yours, this repository alone is not enough: the backend and mail system must be set up separately.
+
+## 1. Deploy the website
+
+On Render:
+
+1. Fork this repository to your GitHub account.
+2. In Render, select **New → Web Service** and connect your fork.
+3. Set:
+   - **Runtime:** Python 3
+   - **Build command:** `pip install -r requirements.txt`
+   - **Start command:** `gunicorn --workers 2 --threads 4 --timeout 30 --bind 0.0.0.0:$PORT app:app`
+4. Add the environment variables listed below in the service's **Environment** settings.
+5. Deploy. The hosting provider gives you a temporary service URL. Open that URL followed by `/OTP` to check the website.
+
+Other Python hosting can use the same build and start commands. On a VPS, run Gunicorn behind a production web server and HTTPS reverse proxy. Do not expose Flask's development server directly to the public internet.
+
+## 2. Connect your domain
+
+A subdomain such as `inbox.yourdomain.com` is recommended if your main website already runs elsewhere.
+
+1. Add the subdomain in your hosting provider's custom-domain settings.
+2. At your DNS provider, create the exact CNAME or A record shown by the hosting provider. DNS targets vary by host; use the values shown in your dashboard.
+3. Wait for DNS verification and HTTPS certificate setup to complete.
+4. Open `https://inbox.yourdomain.com/OTP`.
+5. If you want visitors to find it from your main website, add a button or link there pointing to this address.
+
+For a VPS, point an A record to the VPS public IP, then configure Nginx, Caddy, or another HTTPS reverse proxy to send requests to Gunicorn. The domain must route to this Flask service for its pages to appear.
+
+## 3. Configure the Portal backend
+
+Add these values in the hosting dashboard. The API base must be an actual compatible Portal API URL, not the new website's domain.
+
+| Variable | Required | Value |
 | --- | --- | --- |
-| `PORTAL_API_BASE` | Yes | HTTPS base URL of the Portal API, including `/api/v1`; for example, `https://portal.example.com/api/v1`. |
-| `PORTAL_API_KEY` | Yes | API key authorized by the Portal API. Keep it private. |
-| `READER_SESSION_SECRET` | Yes | A unique random secret of at least 32 characters. Do not reuse the API key or a secret from another app. |
-| `PORTAL_WEB_BASE` | Usually | HTTPS origin of the Portal website that serves message HTML, for example `https://portal.example.com`. If omitted, the app uses the origin from `PORTAL_API_BASE`. Set it explicitly if the Portal website uses a different host. |
-| `READER_COOKIE_SECURE` | Yes in production | Set to `true` when the reader is served over HTTPS. Use `false` only for local HTTP testing. |
-| `PORT` | No | Set automatically by Render and many other hosts. The app defaults to port `5000` when run directly. |
+| `PORTAL_API_BASE` | Yes | HTTPS API base URL ending in `/api/v1`, for example `https://portal.example.com/api/v1`. |
+| `PORTAL_API_KEY` | Yes | API key issued by the Portal backend for this deployment. Keep it private. |
+| `READER_SESSION_SECRET` | Yes | A unique random secret with at least 32 characters. Generate one with the command below. |
+| `PORTAL_WEB_BASE` | Usually | HTTPS origin of the Portal website serving original message HTML, e.g. `https://portal.example.com`. If omitted, the app uses the origin of `PORTAL_API_BASE`. |
+| `READER_COOKIE_SECURE` | Yes in production | Set to `true` for HTTPS. Use `false` only for local HTTP testing. |
+| `PORT` | No | Render and many hosts set this automatically. The app uses port `5000` when run directly. |
 
-Generate a session secret on a trusted computer:
+Generate a new session secret:
 
 ```bash
 python3 -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
-For this repository's Portal, the API base shown in the existing deployment guide is `https://hridoybothub.online/api/v1`. Use the Portal website origin that actually serves the message route for `PORTAL_WEB_BASE`; do not assume the API and website hosts are always identical.
+The API base shown in this repository's previous setup was `https://hridoybothub.online/api/v1`. Use it only if you have authorization to use that Portal. For your own backend, enter your own API URL and key. Set `PORTAL_WEB_BASE` to the host that actually serves the message route.
 
-## Deploy on Render
+## How a request works
 
-1. Fork this repository to your GitHub account, or connect a repository you are authorized to deploy.
-2. In Render, choose **New → Web Service** and connect the repository.
-3. Configure the service:
-   - **Runtime:** Python 3
-   - **Build command:** `pip install -r requirements.txt`
-   - **Start command:** `gunicorn --workers 2 --threads 4 --timeout 30 --bind 0.0.0.0:$PORT app:app`
-4. In **Environment**, add the variables from the table above. Paste the real API key and session secret there, not into a source file.
-5. Deploy and open the service URL followed by `/OTP`.
-6. To use your own domain, add it under the Render service's **Custom Domains** settings and follow the DNS records Render provides. Wait for DNS and HTTPS provisioning to finish before using the site.
+1. A visitor opens your domain and enters a Portal code.
+2. The Flask website keeps the code in a signed, HTTP-only session cookie.
+3. The server requests supported page/status/actions from the configured Portal API and adds the API key server-side.
+4. For an email body, the server fetches HTML from `PORTAL_WEB_BASE` and sends it with a policy that blocks scripts.
 
-The same build and start commands work on compatible Python hosting. For a VPS, run the app behind a production web server and an HTTPS reverse proxy; do not expose Flask's development server directly to the internet.
+This project does not store inboxes in its own database or issue Portal codes. A valid Portal code can grant access to its inbox; keep codes private.
 
 ## Local test
 
-Install dependencies:
+Install the dependencies:
 
 ```bash
 python -m venv .venv
@@ -91,7 +94,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Set the required environment variables in your shell, then run:
+Set the environment variables in the same terminal, then run the site:
 
 ```bash
 export PORTAL_API_BASE="https://portal.example.com/api/v1"
@@ -102,30 +105,21 @@ export READER_COOKIE_SECURE="false"
 python app.py
 ```
 
-On Windows PowerShell, set them with `$env:NAME="value"` (for example, `$env:READER_COOKIE_SECURE="false"`) before running `python app.py`. Open `http://127.0.0.1:5000/OTP`. Use HTTPS and set `READER_COOKIE_SECURE=true` for a public deployment.
+On Windows PowerShell, use `$env:NAME="value"` for each variable before running `python app.py`. Open `http://127.0.0.1:5000/OTP`. For public use, configure HTTPS and set `READER_COOKIE_SECURE=true`.
 
-## Request flow
+## Security
 
-1. A visitor opens the reader and enters a Portal code.
-2. The reader stores that code in the visitor's signed session cookie.
-3. Flask sends supported requests to the configured Portal API. The API key is added server-side.
-4. For a message body, Flask requests the corresponding message route from `PORTAL_WEB_BASE` and returns the HTML with a restrictive policy that blocks scripts.
-
-The server accepts only configured HTTPS hosts and supported API routes. A Portal code is still a bearer credential: anyone who obtains a valid code may be able to open its inbox. Do not share codes or API keys publicly.
-
-## Security checklist
-
-- Keep `PORTAL_API_KEY` and `READER_SESSION_SECRET` out of GitHub, screenshots, and logs.
-- Use a different, randomly generated session secret for every deployment.
-- Serve the reader over HTTPS and keep `READER_COOKIE_SECURE=true`.
-- Do not deploy with an API key unless its owner has authorized that use.
-- If a secret is exposed, revoke or rotate it at its issuer and update the hosting environment.
-- Follow the Portal provider's rules and applicable privacy requirements when handling inboxes and messages.
+- Never commit API keys or session secrets to GitHub.
+- Use a different random session secret for every deployment.
+- Use HTTPS for the public website.
+- Obtain permission before using another Portal operator's API.
+- If a key or secret leaks, revoke/rotate it and replace it in the hosting environment.
+- Follow the Portal provider's terms and privacy requirements.
 
 ## Project files
 
-- `app.py` — Flask application and Portal proxy routes.
-- `templates/page.html` — reader page template.
+- `app.py` — Flask website and API connection.
+- `templates/page.html` — HTML page template.
 - `requirements.txt` — Python dependencies.
-- `Procfile` — production start command for compatible hosts.
+- `Procfile` — production start command.
 - `runtime.txt` — Python runtime declaration.
